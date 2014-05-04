@@ -1,0 +1,10 @@
+__version__ = "0.1.24.post3.g1f1efea"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = 'develop'
+__git_remote_tracking_branch__ = 'origin/develop'
+__git_remote_url__ = 'git@infinigit.infinidat.com:/host/wmi.git'
+__git_head_hash__ = '1f1efea1f47a823c890e80f5cc938fc2f87a5946'
+__git_head_subject__ = 'fixing import'
+__git_head_message__ = ''
+__git_dirty_diff__ = ''
