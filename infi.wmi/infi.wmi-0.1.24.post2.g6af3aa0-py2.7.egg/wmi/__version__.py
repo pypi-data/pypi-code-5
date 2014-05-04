@@ -1,0 +1,10 @@
+__version__ = "0.1.24.post2.g6af3aa0"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = 'develop'
+__git_remote_tracking_branch__ = 'origin/develop'
+__git_remote_url__ = 'git@infinigit.infinidat.com:/host/wmi.git'
+__git_head_hash__ = '6af3aa0522478fc1bf07cef4a0e16b95a6dce433'
+__git_head_subject__ = 'using comtypes module'
+__git_head_message__ = ''
+__git_dirty_diff__ = ''
