@@ -1,0 +1,13 @@
+# postcreate script. You could setup a workflow here for example
+"""
+
+:organization: Logilab
+:copyright: 2001-2009 LOGILAB S.A. (Paris, FRANCE), license is LGPL v2.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: GNU Lesser General Public License, v2.1 - http://www.gnu.org/licenses
+"""
+import os
+import cubes.codenaf as codenaf
+
+classif = create_entity('Classification', name=u'CodeNAF')
+process_script(os.path.join(codenaf.__path__[0], 'bin/import-naf-from-dbf.py'))
