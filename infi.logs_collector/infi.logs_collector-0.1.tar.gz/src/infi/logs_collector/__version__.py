@@ -1,0 +1,10 @@
+__version__ = "0.1"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.1)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = 'f0787bc766845cefd77fdcba85b168e17ffd85ff'
+__git_head_subject__ = 'Finished release v0.1.'
+__git_head_message__ = '* release/v0.1:\n  adding support for interactive run\n  buildout.cfg: changed isolated python version to v2.7.6.6'
+__git_dirty_diff__ = ''
