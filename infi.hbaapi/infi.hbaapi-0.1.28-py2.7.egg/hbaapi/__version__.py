@@ -1,0 +1,10 @@
+__version__ = "0.1.28"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.1.28)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = 'ab258a4597a229b243dd4674ef29996cdfbbeb32'
+__git_head_subject__ = 'Finished release v0.1.28.'
+__git_head_message__ = '* release/v0.1.28:\n  TRIVIAL reverting the handling of \\x00\n  STORAGEMODEL-271 CompositeGenerator.iter_ports: catching exceptions in child generators and moving on\n  STORAGEMODEL-270 fixing a regex\n  TRIVIAL whitespace\n  buildout.cfg: changed isolated python version to v2.7.6.6'
+__git_dirty_diff__ = ''
