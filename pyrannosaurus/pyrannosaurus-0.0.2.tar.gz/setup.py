@@ -1,0 +1,25 @@
+from setuptools import setup, find_packages
+import glob
+
+setup(
+    name = "pyrannosaurus",
+    version = "0.0.2",
+    description = "Salesforce Development Tools",
+    author = "KC Shafer",
+    author_email = "kclshafer@gmail.com",
+    url = "https://github.com/kcshafer/pyrannosaurus/",
+    keywords = ["salesforce"],
+    install_requires = [
+        "suds==0.4"
+    ],
+    package_dir={},
+    include_package_data=True,
+    packages=['pyrannosaurus', 'wsdl'],
+    package_data={
+       'wsdl' : ['wsdl/*.xml']
+    },
+    long_description = """\
+    Salesforce Development Tools
+    ----------------------------
+    """
+)
