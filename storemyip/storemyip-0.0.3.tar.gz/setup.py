@@ -1,0 +1,37 @@
+from distutils.core import setup
+setup(
+	name = 'storemyip',
+	packages = ['storemyip'],
+	version = '0.0.3',
+	description = 'This multufile python script can store your IP of several ways and can be configured by the config.py file, modified(adds a new way).',
+	author = 'Platon Efimov',
+	author_email = 'platon.efimov@gmail.com',
+	license = 'GNU GPL',
+	scripts = ['storemyip/storemyip.py', 'storemyip/storemyip'],
+	data_files = [
+		('/etc/storemyip/', ['storemyip/config.py']),
+		('/etc/init.d/', ['storemyip/storemyip'])
+	],
+	url = 'https://github.com/Platon-Efimov/storemyip',
+	download_url = 'https://github.com/Platon-Efimov/storemyip/tarball/0.0.3',
+	keywords = ['network', 'link', 'ip', 'alpha', 'testing'],
+	classifiers = [
+		'Development Status :: 2 - Pre-Alpha',
+		'Environment :: Console',
+		'Intended Audience :: Developers',
+		'Intended Audience :: End Users/Desktop',
+		'Intended Audience :: Other Audience',
+		'Intended Audience :: System Administrators',
+		'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+		'Natural Language :: English',
+		'Programming Language :: Python :: 2',
+		'Programming Language :: Python :: 3',
+		'Topic :: Internet',
+		'Topic :: Internet :: WWW/HTTP',
+		'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+		'Topic :: System',
+		'Topic :: System :: Systems Administration',
+		'Topic :: System :: Systems Administration :: Authentication/Directory',
+		'Topic :: Utilities',
+	],
+)
