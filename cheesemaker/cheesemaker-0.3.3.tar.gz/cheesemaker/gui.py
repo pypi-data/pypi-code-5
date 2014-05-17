@@ -1,0 +1,458 @@
+# -*- coding: utf-8 -*-
+
+# Authors: David Whitlock <alovedalongthe@gmail.com>
+# A simple image viewer
+# Copyright (C) 2013 David Whitlock
+#
+# Cheesemaker is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cheesemaker is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cheesemaker.  If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+from PyQt5.QtCore import Qt, QDir, QRect, QTimer
+from PyQt5.QtGui import QImage, QPixmap, QTransform, QPainter
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView, QGraphicsPixmapItem,
+        QMenu, QDialog, QFileDialog, QAction, QMessageBox, QFrame, QRubberBand, qApp)
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+from gi.repository import GExiv2
+from functools import partial
+import os
+import sys
+import dbus
+import random
+from . import preferences, editimage
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent):
+        QMainWindow.__init__(self)
+
+        self.printer = QPrinter()
+        self.load_img = self.load_img_fit
+        self.reload_img = self.reload_auto
+        self.scene = QGraphicsScene()
+        self.img_view = ImageView(self)
+        self.img_view.setScene(self.scene)
+        self.setCentralWidget(self.img_view)
+
+        self.create_actions()
+        self.create_menu()
+        self.create_dict()
+        self.slides_next = True
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showMenu)
+
+        self.read_prefs()
+        self.readable_list = parent.readable_list
+        self.writeable_list = ('bmp', 'jpg', 'jpeg', 'png', 'ppm', 'tif', 'tiff', 'xbm', 'xpm')
+        self.resize(700, 500)
+
+    def create_actions(self):
+        self.open_act = QAction('&Open', self, shortcut='Ctrl+O')
+        self.open_act.triggered.connect(self.open)
+        self.reload_act = QAction('&Reload image', self, shortcut='Ctrl+R', enabled=False)
+        self.reload_act.triggered.connect(self.reload_img)
+        self.print_act = QAction('&Print', self, shortcut='Ctrl+P', enabled=False)
+        self.print_act.triggered.connect(self.print_img)
+        self.save_act = QAction('&Save image', self, shortcut='Ctrl+S', enabled=False)
+        self.save_act.triggered.connect(self.save_img)
+        self.exit_act = QAction('E&xit', self, shortcut='Ctrl+Q')
+        self.exit_act.triggered.connect(self.close)
+        self.fulls_act = QAction('Fullscreen', self, shortcut='F11', enabled=False, checkable=True)
+        self.fulls_act.triggered.connect(self.toggle_fullscreen)
+        self.ss_act = QAction('Slideshow', self, shortcut='F5', enabled=False, checkable=True)
+        self.ss_act.triggered.connect(self.toggle_slideshow)
+        self.ss_next_act = QAction('Next / Random image', self, enabled=False, checkable=True)
+        self.ss_next_act.triggered.connect(self.set_slide_type)
+        self.ss_next_act.setChecked(True)
+        self.next_act = QAction('Next image', self, shortcut='Right', enabled=False)
+        self.next_act.triggered.connect(self.go_next_img)
+        self.prev_act = QAction('Previous image', self, shortcut='Left', enabled=False)
+        self.prev_act.triggered.connect(self.go_prev_img)
+        self.rotleft_act = QAction('Rotate left', self, shortcut='Ctrl+Left', enabled=False)
+        self.rotleft_act.triggered.connect(partial(self.img_rotate, 270))
+        self.rotright_act = QAction('Rotate right', self, shortcut='Ctrl+Right', enabled=False)
+        self.rotright_act.triggered.connect(partial(self.img_rotate, 90))
+        self.fliph_act = QAction('Flip image horizontally', self, shortcut='Ctrl+H', enabled=False)
+        self.fliph_act.triggered.connect(partial(self.img_flip, -1, 1))
+        self.flipv_act = QAction('Flip image vertically', self, shortcut='Ctrl+V', enabled=False)
+        self.flipv_act.triggered.connect(partial(self.img_flip, 1, -1))
+        self.resize_act = QAction('Resize image', self, enabled=False, triggered=self.resize_img)
+        self.crop_act = QAction('Crop image', self, enabled=False, triggered=self.crop_img)
+        self.zin_act = QAction('Zoom &In', self, shortcut='Up', enabled=False)
+        self.zin_act.triggered.connect(partial(self.img_view.zoom, 1.1))
+        self.zout_act = QAction('Zoom &Out', self, shortcut='Down', enabled=False)
+        self.zout_act.triggered.connect(partial(self.img_view.zoom, 1 / 1.1))
+        self.fit_win_act = QAction('Best &fit', self, checkable=True, shortcut='F',
+                enabled=False, triggered=self.zoom_default)
+        self.fit_win_act.setChecked(True)
+        self.prefs_act = QAction('Preferences', self, triggered=self.set_prefs)
+        self.props_act = QAction('Properties', self, triggered=self.get_props)
+        self.help_act = QAction('&Help', self, shortcut='F1', triggered=self.help_page)
+        self.about_act = QAction('&About', self, triggered=self.about_cm)
+        self.aboutQt_act = QAction('About &Qt', self,
+                triggered=qApp.aboutQt)
+
+    def create_menu(self):
+        self.popup = QMenu(self)
+        acts1 = [self.open_act, self.reload_act, self.print_act, self.save_act, self.props_act, self.exit_act]
+        acts2 = [self.rotleft_act, self.rotright_act, self.fliph_act, self.flipv_act, self.resize_act, self.crop_act, self.prefs_act]
+        acts3 = [self.next_act, self.prev_act, self.zin_act, self.zout_act, self.fit_win_act, self.fulls_act, self.ss_act, self.ss_next_act]
+        acts4 = [self.help_act, self.about_act, self.aboutQt_act]
+        fileMenu = self.menuBar().addMenu('&File')
+        for act in acts1:
+            fileMenu.addAction(act)
+        editMenu = self.menuBar().addMenu('&Edit')
+        for act in acts2:
+            editMenu.addAction(act)
+        viewMenu = self.menuBar().addMenu('&View')
+        for act in acts3:
+            viewMenu.addAction(act)
+        helpMenu = self.menuBar().addMenu('&Help')
+        for act in acts4:
+            helpMenu.addAction(act)
+
+        self.action_list = acts1 + acts2 + acts3 + acts4
+        for act in self.action_list:
+            self.addAction(act)
+            self.popup.addAction(act)
+
+    def showMenu(self, pos):
+        self.popup.popup(self.mapToGlobal(pos))
+ 
+    def create_dict(self):
+        """Create a dictionary to handle auto-orientation."""
+        self.orient_dict = {None: self.load_img,
+                '1': self.load_img,
+                '2': partial(self.img_flip, -1, 1),
+                '3': partial(self.img_rotate, 180),
+                '4': partial(self.img_flip, -1, 1),
+                '5': self.img_rotate_fliph,
+                '6': partial(self.img_rotate, 90),
+                '7': self.img_rotate_flipv,
+                '8': partial(self.img_rotate, 270)}
+
+    def read_prefs(self):
+        """Parse the preferences from the config file, or set default values."""
+        try:
+            conf = preferences.Config()
+            values = conf.read_config()
+            self.auto_orient = values[0]
+            self.slide_delay = values[1]
+            self.quality = values[2]
+        except:
+            self.auto_orient = True
+            self.slide_delay = 5
+            self.quality = 90
+        self.reload_img = self.reload_auto if self.auto_orient else self.reload_nonauto
+
+    def set_prefs(self):
+        """Write preferences to the config file."""
+        dialog = preferences.PrefsDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            self.auto_orient = dialog.auto_orient
+            self.slide_delay = dialog.delay_spinb.value()
+            self.quality = dialog.qual_spinb.value()
+            conf = preferences.Config()
+            conf.write_config(self.auto_orient, self.slide_delay, self.quality)
+        self.reload_img = self.reload_auto if self.auto_orient else self.reload_nonauto
+
+    def open(self):
+        filename = QFileDialog.getOpenFileName(self, 'Open File',
+                QDir.currentPath())
+        if filename:
+            if filename[0].lower().endswith(self.readable_list):
+                self.open_img(filename[0])
+            else:
+                QMessageBox.information(self, 'Error', 'Cannot load {} images.'.format(filename.rsplit('.', 1)[1]))
+
+    def open_img(self, filename):
+        self.filename = filename
+        self.reload_img()
+        dirname = os.path.dirname(self.filename)
+        self.set_img_list(dirname)
+        self.img_index = self.filelist.index(self.filename)
+        if self.action_list:
+            for act in self.action_list:
+                act.setEnabled(True)
+                self.action_list = []
+
+    def set_img_list(self, dirname):
+        """Create a list of readable images from the current directory."""
+        filelist = os.listdir(dirname)
+        self.filelist = [os.path.join(dirname, filename) for filename in filelist
+                        if filename.lower().endswith(self.readable_list)]
+        self.filelist.sort()
+        self.last_file = len(self.filelist) - 1
+
+    def get_img(self):
+        """Get image from filename and create pixmap."""
+        image = QImage(self.filename)
+        self.pixmap = QPixmap.fromImage(image)
+        self.setWindowTitle(self.filename.rsplit('/', 1)[1])
+
+    def reload_auto(self):
+        """Load a new image with auto-orientation."""
+        self.get_img()
+        try:
+            orient = GExiv2.Metadata(self.filename)['Exif.Image.Orientation']
+            self.orient_dict[orient]()
+        except:
+            self.load_img()
+
+    def reload_nonauto(self):
+        """Load a new image without auto-orientation."""
+        self.get_img()
+        self.load_img()
+
+    def load_img_fit(self):
+        """Load the image to fit the window."""
+        self.scene.clear()
+        self.scene.addPixmap(self.pixmap)
+        self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
+        self.img_view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+
+    def load_img_1to1(self):
+        """Load the image at its original size."""
+        self.scene.clear()
+        self.img_view.resetTransform()
+        self.scene.addPixmap(self.pixmap)
+        self.scene.setSceneRect(0, 0, self.pixmap.width(), self.pixmap.height())
+        pixitem = QGraphicsPixmapItem(self.pixmap)
+        self.img_view.centerOn(pixitem)
+
+    def go_next_img(self):
+        self.img_index = self.img_index + 1 if self.img_index < self.last_file else 0
+        self.filename = self.filelist[self.img_index]
+        self.reload_img()
+
+    def go_prev_img(self):
+        self.img_index = self.img_index - 1 if self.img_index else self.last_file
+        self.filename = self.filelist[self.img_index]
+        self.reload_img()
+
+    def zoom_default(self):
+        """Toggle best fit / original size loading."""
+        if self.fit_win_act.isChecked():
+            self.load_img = self.load_img_fit
+            self.create_dict()
+            self.load_img()
+        else:
+            self.load_img = self.load_img_1to1
+            self.create_dict()
+            self.load_img()
+
+    def img_rotate(self, angle):
+        self.pixmap = self.pixmap.transformed(QTransform().rotate(angle))
+        self.load_img()
+
+    def img_flip(self, x, y):
+        self.pixmap = self.pixmap.transformed(QTransform().scale(x, y))
+        self.load_img()
+
+    def img_rotate_fliph(self):
+        self.img_rotate(90)
+        self.img_flip(-1, 1)
+
+    def img_rotate_flipv(self):
+        self.img_rotate(90)
+        self.img_flip(1, -1)
+
+    def resize_img(self):
+        dialog = editimage.ResizeDialog(self, self.pixmap.width(), self.pixmap.height())
+        if dialog.exec_() == QDialog.Accepted:
+            width = dialog.get_width.value()
+            height = dialog.get_height.value()
+            self.pixmap = self.pixmap.scaled(width, height, Qt.IgnoreAspectRatio,
+                    Qt.SmoothTransformation)
+            self.save_img()
+
+    def crop_img(self):
+        self.img_view.setup_crop(self.pixmap.width(), self.pixmap.height())
+        dialog = editimage.CropDialog(self, self.pixmap.width(), self.pixmap.height())
+        if dialog.exec_() == QDialog.Accepted:
+            coords = self.img_view.get_coords()
+            self.pixmap = self.pixmap.copy(*coords)
+            self.load_img()
+        self.img_view.rband.hide()
+
+    def toggle_fullscreen(self):
+        if self.fulls_act.isChecked():
+            self.showFullScreen()
+            self.menuBar().hide()
+        else:
+            self.showNormal()
+            self.menuBar().show()
+
+    def toggle_slideshow(self):
+        if self.ss_act.isChecked():
+            self.showFullScreen()
+            self.menuBar().hide()
+            self.start_ss()
+        else:
+            self.toggle_fullscreen()
+            self.timer.stop()
+            self.ss_timer.stop()
+
+    def start_ss(self):
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_img)
+        self.timer.start(self.slide_delay * 1000)
+        self.ss_timer = QTimer()
+        self.ss_timer.timeout.connect(self.update_img)
+        self.ss_timer.start(60000)
+
+    def update_img(self):
+        if self.slides_next:
+            self.go_next_img()
+        else:
+            self.filename = random.choice(self.filelist)
+            self.reload_img()
+
+    def set_slide_type(self):
+        self.slides_next = self.ss_next_act.isChecked()
+
+    def inhibit_screensaver(self):
+        bus = dbus.SessionBus()
+        ss = bus.get_object('org.freedesktop.ScreenSaver','/ScreenSaver')
+        self.inhibit_method = ss.get_dbus_method('SimulateUserActivity','org.freedesktop.ScreenSaver')
+
+    def save_img(self):
+        filename = QFileDialog.getSaveFileName(self, 'Save your image', self.filename)
+        if filename:
+            if filename[0].lower().endswith(self.writeable_list):
+                self.pixmap.save(filename[0], None, self.quality)
+                exif = GExiv2.Metadata(self.filename)
+                if exif:
+                    saved_exif = GExiv2.Metadata(filename[0])
+                    for tag in exif.get_exif_tags():
+                        saved_exif[tag] = exif[tag]
+                    saved_exif.set_orientation(GExiv2.Orientation.NORMAL)
+                    saved_exif.save_file()
+            else:
+                QMessageBox.information(self, 'Error', 'Cannot save {} images.'.format(filename[0].rsplit('.', 1)[1]))
+
+    def print_img(self):
+        dialog = QPrintDialog(self.printer, self)
+        if dialog.exec_():
+            painter = QPainter(self.printer)
+            rect = painter.viewport()
+            size = self.pixmap.size()
+            size.scale(rect.size(), Qt.KeepAspectRatio)
+            painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
+            painter.setWindow(self.pixmap.rect())
+            painter.drawPixmap(0, 0, self.pixmap)
+
+    def resizeEvent(self, event=None):
+        if self.fit_win_act.isChecked():
+            try:
+                self.load_img()
+            except:
+                pass
+
+    def get_props(self):
+        """Get the properties of the current image."""
+        image = QImage(self.filename)
+        preferences.PropsDialog(self, self.filename.rsplit('/', 1)[1], image.width(), image.height())
+
+    def help_page(self):
+        preferences.HelpDialog(self)
+
+    def about_cm(self):
+        about_message = 'Version: 0.3.3\nAuthor: David Whitlock\nLicense: GPLv3'
+        QMessageBox.about(self, 'About Cheesemaker', about_message)
+
+class ImageView(QGraphicsView):
+    def __init__(self, parent=None):
+        QGraphicsView.__init__(self, parent)
+
+        self.go_prev_img = parent.go_prev_img
+        self.go_next_img = parent.go_next_img
+
+        pal = self.palette()
+        pal.setColor(self.backgroundRole(), Qt.black)
+        self.setPalette(pal)
+        self.setFrameShape(QFrame.NoFrame)
+
+    def mousePressEvent(self, event):
+        """Go to the next / previous image, or be able to drag the image with a hand."""
+        if event.button() == Qt.LeftButton:
+            x = event.x()
+            if x < 100:
+                self.go_prev_img()
+            elif x > self.width() - 100:
+                self.go_next_img()
+            else:
+                self.setDragMode(QGraphicsView.ScrollHandDrag)
+        QGraphicsView.mousePressEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        self.setDragMode(QGraphicsView.NoDrag)
+        QGraphicsView.mouseReleaseEvent(self, event)
+
+    def zoom(self, zoomratio):
+        self.scale(zoomratio, zoomratio)
+
+    def wheelEvent(self, event):
+        zoomratio = 1.1
+        if event.angleDelta().y() < 0:
+            zoomratio = 1.0 / zoomratio
+        self.scale(zoomratio, zoomratio)
+
+    def setup_crop(self, width, height):
+        self.rband = QRubberBand(QRubberBand.Rectangle, self)
+        coords = self.mapFromScene(0, 0, width, height)
+        self.rband.setGeometry(QRect(coords.boundingRect()))
+        self.rband.show()
+
+    def crop_draw(self, x, y, width, height):
+        coords = self.mapFromScene(x, y, width, height)
+        self.rband.setGeometry(QRect(coords.boundingRect()))
+
+    def get_coords(self):
+        rect = self.rband.geometry()
+        size = self.mapToScene(rect).boundingRect()
+        x = int(size.x())
+        y = int(size.y())
+        width = int(size.width())
+        height = int(size.height())
+        return (x, y, width, height)
+
+class ImageViewer(QApplication):
+    def __init__(self, args):
+        QApplication.__init__(self, args)
+
+        self.args = args
+        self.readable_list = ('bmp', 'gif', 'jpg', 'jpeg', 'mng', 'png', 'pbm',
+                'pgm', 'ppm', 'tif', 'tiff', 'xbm', 'xpm', 'svg', 'tga')
+
+    def startup(self):
+        if len(self.args) > 1:
+            files = self.args[1:]
+            self.open_files(files)
+        else:
+            self.open_win(None)
+
+    def open_files(self, files):
+        for filename in files:
+            if filename.lower().endswith(self.readable_list):
+                self.open_win(filename)
+
+    def open_win(self, filename):
+        win = MainWindow(self)
+        win.show()
+        if filename:
+            win.open_img(filename)
+
+def main():
+    app = ImageViewer(sys.argv)
+    app.startup()
+    app.exec_()
