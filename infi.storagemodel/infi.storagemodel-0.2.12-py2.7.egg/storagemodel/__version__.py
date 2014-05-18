@@ -1,0 +1,10 @@
+__version__ = "0.2.12"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.2.12)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = '0c8afeee3a09f25524394ba79f96a153a29a9f1f'
+__git_head_subject__ = 'STORAGEMODEL-273 test_unit_ready: catching all NOT_READY unit attentions'
+__git_head_message__ = ''
+__git_dirty_diff__ = ''
