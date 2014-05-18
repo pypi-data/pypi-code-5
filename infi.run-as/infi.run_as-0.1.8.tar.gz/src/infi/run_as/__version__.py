@@ -1,0 +1,10 @@
+__version__ = "0.1.8"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.1.8)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = '0d89b86d2852ce8f8449ad20a1ff78afa324b216'
+__git_head_subject__ = 'fixing reversed logic in previous commit'
+__git_head_message__ = ''
+__git_dirty_diff__ = ''
