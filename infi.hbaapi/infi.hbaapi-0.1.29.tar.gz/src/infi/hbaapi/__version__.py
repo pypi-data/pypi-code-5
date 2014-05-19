@@ -1,0 +1,10 @@
+__version__ = "0.1.29"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.1.29)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = 'f3ec57edfe0296a43cc8357603b3ae3d32cefb62'
+__git_head_subject__ = 'STORAGEMODEL-271: the exception handler was too inner'
+__git_head_message__ = ''
+__git_dirty_diff__ = ''
