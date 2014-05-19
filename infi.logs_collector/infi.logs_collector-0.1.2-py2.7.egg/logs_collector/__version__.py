@@ -1,0 +1,10 @@
+__version__ = "0.1.2"
+__git_commiter_name__ = "Itai Shirav"
+__git_commiter_email__ = "itais@infinidat.com"
+__git_branch__ = '(detached from v0.1.2)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = '3ae77daab9818c9aca00df882684ea289c6aa42c'
+__git_head_subject__ = 'Add option to pass environment variables to Command'
+__git_head_message__ = '(cherry picked from commit 3f9d547bb6413164749a6c4cc382f1e2d4376938)\nSigned-off-by: Guy Rozendorn <guy@rzn.co.il>'
+__git_dirty_diff__ = ''
