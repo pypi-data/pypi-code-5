@@ -1,0 +1,8 @@
+SERVER_DEFAULT = "localhost"
+PORT_DEFAULT = 7272
+
+REQUEST_TIMEOUT = None
+
+NUM_THREADS = 4
+
+DEBUG = False
