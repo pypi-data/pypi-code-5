@@ -1,0 +1,24 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='GetLucky',
+    version='1.2.6.4',
+    author='Tanner Baldus',
+    author_email='tbaldus285@gmail.com',
+    packages=['src/GetLucky'],
+    scripts=[],
+    url='http://pypi.python.org/pypi/getlucky/',
+    license='LICENSE.txt',
+    description='A CLI to quickly set the mood with Songza.',
+    long_description=open('README.txt').read(),
+    install_requires=[
+        "requests >= 2.2.1",
+        "beautifulsoup4 >= 4.3.2",
+        "docopt >= 0.6.1",
+    ],
+    entry_points={
+        'console_scripts': [
+         'gl = GetLucky.GetLucky:main',
+        ],
+        }
+)
