@@ -1,0 +1,10 @@
+__version__ = "0.1.1"
+__git_commiter_name__ = "Guy Rozendorn"
+__git_commiter_email__ = "guy@rzn.co.il"
+__git_branch__ = '(detached from v0.1.1)'
+__git_remote_tracking_branch__ = '(No remote tracking)'
+__git_remote_url__ = '(Not remote tracking)'
+__git_head_hash__ = '97926c2c56e1c610b9f36ad97c62d096e5c4317c'
+__git_head_subject__ = 'Finished release v0.1.1.'
+__git_head_message__ = '* release/v0.1.1:\n  buildout.cfg: remove infi.recipe.console_scripts from requirements\n  TRIVIAL updated checkout instructions in README.md\n  TRIVIAL gitignore\n  TRIVIAL gitignore\n  TRIVIAL gitignore\n  fixing tests\n  buildout.cfg: adding infi.execute to requirements (dev)\n  buildout.cfg: changed isolated python version to v2.7.5.5\n  adding test'
+__git_dirty_diff__ = ''
