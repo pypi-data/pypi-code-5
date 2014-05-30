@@ -1,0 +1,1 @@
+from backstage.act.act import new_act
