@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+"""Settings for cmsplugin_satchmo"""
+
+from django.conf import settings
+
+_SHOP_BASE='/'
+_PRODUCT_SLUG='products'
+_CATEGORY_SLUG='category'
+
+CMSPLUGIN_SATCHMO_SETTINGS = getattr(settings, 'SATCHMO_SETTINGS', {
+	'SHOP_BASE': _SHOP_BASE,
+	'PRODUCT_SLUG': _PRODUCT_SLUG,
+	'CATEGORY_SLUG': _CATEGORY_SLUG,
+})
+PRODUCT_URL_PATH = '%s%s/' % (getattr(CMSPLUGIN_SATCHMO_SETTINGS, 'SHOP_BASE', _SHOP_BASE), getattr(CMSPLUGIN_SATCHMO_SETTINGS, 'PRODUCT_SLUG', _PRODUCT_SLUG))
+CATEGORY_URL_PATH = '%s%s/' % (getattr(CMSPLUGIN_SATCHMO_SETTINGS, 'SHOP_BASE', _SHOP_BASE), getattr(CMSPLUGIN_SATCHMO_SETTINGS, 'CATEGORY_SLUG', _CATEGORY_SLUG))
+
